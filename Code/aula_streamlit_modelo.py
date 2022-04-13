@@ -56,12 +56,13 @@ for wine_type in df_wine['type'].unique():
 
     ############################################ AVALIACAO GRUPO DE TESTE
     print('\tAvaliação do modelo')
+    threshold = 0.5
     xtrain.loc[:, 'probabilidade'] = model.predict_proba(xtrain[ml_feature])[:,1]
-    xtrain.loc[:, 'classificacao'] = model.predict(xtrain[ml_feature])
+    xtrain.loc[:, 'classificacao'] = (xtrain.loc[:, 'probabilidade'] > threshold).astype(int)
     xtrain.loc[:, 'categoria'] = 'treino'
 
     xtest.loc[:, 'probabilidade']  = model.predict_proba(xtest[ml_feature])[:,1]
-    xtest.loc[:, 'classificacao']  = model.predict(xtest[ml_feature])
+    xtest.loc[:, 'classificacao'] = (xtest.loc[:, 'probabilidade'] > threshold).astype(int)
     xtest.loc[:, 'categoria'] = 'teste'
 
     wine = pandas.concat((xtrain, xtest))
@@ -82,7 +83,8 @@ for wine_type in df_wine['type'].unique():
         'model': model,
         'data': wine, 
         'features': ml_feature,
-        'target_col': wine_target_col
+        'target_col': wine_target_col,
+        'threshold': threshold
     }
 
 ############################################ EXPORTACAO RESULTADOS
