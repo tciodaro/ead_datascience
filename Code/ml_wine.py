@@ -1,4 +1,4 @@
-import pycaret.regression as pr
+import pycaret.regression as pc
 import pandas as pd
 from sklearn import model_selection
 import mlflow
@@ -36,7 +36,7 @@ df_test[wine_target_col] = ytest
 
 # mlflow.set_tracking_uri("sqlite:///mlruns.db")
 
-s = pr.setup(data = df_train, 
+s = pc.setup(data = df_train, 
              target = wine_target_col,
              test_data=df_test,
              categorical_features = categorical_features,
@@ -46,19 +46,18 @@ s = pr.setup(data = df_train,
              log_experiment = True, 
              log_plots = True)
 models = ['lr', 'dt', 'rf']
-bestmodel = pr.compare_models(include = models)
+bestmodel = pc.compare_models(include = models)
 
-# [ 'residuals', 'error', 'cooks', 'rfe', 'learning', 
-#   'vc', 'manifold', 'feature', 'feature_all', 'tree' ]
-regression_plots = [ 'residuals', 'error', 'learning', 
-                     'vc','feature_all' ]
-for plot_type in regression_plots:
+classification_plots = [ 'auc', 'confusion_matrix','error','class_report',
+                         'learning','vc','feature',]
+for plot_type in classification_plots:
     print('=> Aplicando plot ', plot_type)
     try:
-        artifact = pr.plot_model(bestmodel, plot=plot_type, save=True)
+        artifact = pc.plot_model(bestmodel, plot=plot_type, save=True)
         mlflow.log_artifact(artifact)
     except:
         print('=> Nao possivel plotar: ', plot_type )
         continue
-        
+
+mlflow.end_run()
         

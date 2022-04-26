@@ -5,8 +5,6 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 fname = '../Data/modelo_vinhos.pkl'
-operation_file = '../Data/operacao_vinhos.parquet'
-
 
 ############################################ SIDE BAR TITLE
 st.sidebar.title('Painel de Controle')
@@ -30,16 +28,10 @@ features = results[wine_type]['features']
 target_col = results[wine_type]['target_col']
 idx_train = train_data.categoria == 'treino'
 idx_test = train_data.categoria == 'teste'
+train_threshold = results[wine_type]['threshold']
 
-############################################ LEITURA DOS DADOS
-@st.cache(allow_output_mutation=True)
-def operation_data(fname):
-    return joblib.load(operation_file)
-
-try:
-    op_data = operation_data(operation_file)
-except:
-    op_data = pandas.DataFrame(columns=features)
+print(f"features {features}")
+print(f"train_data {train_data.columns}")
 
 
 ############################################ TITULO
@@ -63,19 +55,33 @@ Os vinhos são caracterizados pelas seguintes variáveis: {features}.
 st.sidebar.header('Entrada de Variáveis')
 form = st.sidebar.form("input_form")
 input_variables = {}
+
+print(train_data.info())
+
 for cname in features:
-    input_variables[cname] = form.slider(cname.capitalize(),
-                                   train_data[cname].min(),
-                                   train_data[cname].max())
+#     print(f'cname {cname}')
+#     print(train_data[cname].unique())
+#     print(train_data[cname].astype(float).max())
+#     print(float(train_data[cname].astype(float).min()))
+#     print(float(train_data[cname].astype(float).max()))
+#     print(float(train_data[cname].astype(float).mean()))
+    input_variables[cname] = (form.slider(cname.capitalize(),
+                                          min_value = float(train_data[cname].astype(float).min()),
+                                          max_value = float(train_data[cname].astype(float).max()),
+                                          value = float(train_data[cname].astype(float).mean()))
+                                   ) 
+                             
 form.form_submit_button("Avaliar")
 
 ############################################ PREVISAO DO MODELO 
 @st.cache
 def predict_user(input_variables):
-    X = pandas.DataFrame([input_variables])
+    print(f'input_variables {input_variables}')
+    X = pandas.DataFrame.from_dict(input_variables, orient='index').T
+    Yhat = model.predict_proba(X)[0,1]
     return {
-        'probabilidade': model.predict_proba(X)[0, 1],
-        'classificacao': model.predict(X)[0]
+        'probabilidade': Yhat,
+        'classificacao': int(Yhat >= train_threshold)
     }
 
 user_wine = predict_user(input_variables)
